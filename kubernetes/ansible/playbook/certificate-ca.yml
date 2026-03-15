@@ -1,0 +1,9 @@
+- name: Add CA certificate
+  ansible.builtin.blockinfile:
+    path: /usr/local/share/ca-certificates/ca.crt
+    block: "{{ ca_cert }}"
+    create: yes
+
+- name: Update CA certificates
+  ansible.builtin.command:
+    cmd: update-ca-certificates

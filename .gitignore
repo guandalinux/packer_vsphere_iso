@@ -1,0 +1,7 @@
+# Python virtual environments
+## Ignore venv directory.
+**/venv/
+
+# VSCODE
+.vscode
+**/.vscode

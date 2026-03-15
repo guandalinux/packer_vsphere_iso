@@ -1,0 +1,96 @@
+---
+
+# ---------------------------------------------------------
+# 2. ENABLE SERVICES
+# ---------------------------------------------------------
+- name: Enable essential services at boot
+  ansible.builtin.service:
+    name: "{{ item }}"
+    enabled: yes
+  loop:
+    - cloud-init
+    - open-vm-tools
+    - ssh
+  ignore_errors: yes # Ignore if a service does not exist (e.g., iscsid)
+
+# ---------------------------------------------------------
+# 3. LOG CLEANUP
+# ---------------------------------------------------------
+- name: Truncate log files
+  ansible.builtin.copy:
+    content: ""
+    dest: "{{ item }}"
+    force: yes
+  loop:
+    - /var/log/audit/audit.log
+    - /var/log/wtmp
+    - /var/log/lastlog
+  ignore_errors: yes # Do not fail if the file does not exist
+
+# ---------------------------------------------------------
+# 4. UDEV & TMP CLEANUP
+# ---------------------------------------------------------
+- name: Remove persistent network rules (udev)
+  ansible.builtin.file:
+    path: /etc/udev/rules.d/70-persistent-net.rules
+    state: absent
+
+- name: Empty temporary directories (/tmp and /var/tmp)
+  ansible.builtin.shell: rm -rf /tmp/* /var/tmp/*
+  args:
+    warn: false
+
+# ---------------------------------------------------------
+# 5. SSH KEYS & HISTORY CLEANUP
+# ---------------------------------------------------------
+- name: Remove host SSH keys (They will be regenerated at boot)
+  ansible.builtin.shell: rm -f /etc/ssh/ssh_host_*
+  args:
+    warn: false
+
+- name: Clean root Bash history
+  ansible.builtin.file:
+    path: /root/.bash_history
+    state: absent
+
+# ---------------------------------------------------------
+# 6. MACHINE-ID MANAGEMENT (Critical for unique DHCP/IP)
+# ---------------------------------------------------------
+- name: Truncate /etc/machine-id (do not delete, just empty it)
+  ansible.builtin.copy:
+    content: ""
+    dest: /etc/machine-id
+
+- name: Remove machine-id from dbus
+  ansible.builtin.file:
+    path: /var/lib/dbus/machine-id
+    state: absent
+
+# Optional: Recreate the symbolic link (Standard on recent Debian)
+# The system will regenerate it at the next boot via systemd-machine-id-commit
+- name: Link dbus machine-id to /etc/machine-id
+  ansible.builtin.file:
+    src: /etc/machine-id
+    dest: /var/lib/dbus/machine-id
+    state: link
+
+# ---------------------------------------------------------
+# 7. HOSTNAME & RESOLV
+# ---------------------------------------------------------
+- name: Reset hostname, hosts, and resolv.conf
+  ansible.builtin.copy:
+    content: ""
+    dest: "{{ item }}"
+  loop:
+    - /etc/hostname
+    - /etc/hosts
+    - /etc/resolv.conf
+
+- name: Set temporary hostname to localhost
+  ansible.builtin.command: hostnamectl set-hostname localhost
+
+# ---------------------------------------------------------
+# 8. CLOUD-INIT CLEAN (The grand finale)
+# ---------------------------------------------------------
+- name: Clean cloud-init artifacts
+  ansible.builtin.command: cloud-init clean -s -l

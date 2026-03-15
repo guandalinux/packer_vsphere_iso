@@ -1,0 +1,33 @@
+---
+
+# Requirements of Creating a VMware vSphere Virtual Machine Template RKE
+# link : https://ranchermanager.docs.rancher.com/how-to-guides/new-user-guides/launch-kubernetes-with-rancher/use-new-nodes-in-an-infra-provider/vsphere/create-a-vm-template
+
+# ---------------------------------------------------------
+# 1. NETWORK CONFIGURATION
+# ---------------------------------------------------------
+- name: Configure /etc/network/interfaces cleanly
+  ansible.builtin.copy:
+    dest: /etc/network/interfaces
+    content: |
+      auto lo
+      iface lo inet loopback
+
+      # The primary network interface
+      allow-hotplug ens161
+      iface ens161 inet dhcp
+    mode: '0644'
+
+# ---------------------------------------------------------
+# 2. ENABLE SERVICES
+# ---------------------------------------------------------
+- name: Enable essential services at boot
+  ansible.builtin.service:
+    name: "{{ item }}"
+    enabled: yes
+  loop:
+    - cloud-init
+    - open-vm-tools
+    - ssh
+    - iscsid
+  ignore_errors: yes # Ignore if a service does not exist (e.g., iscsid)

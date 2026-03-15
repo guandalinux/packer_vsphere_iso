@@ -1,0 +1,15 @@
+- name: Create udev rule for memory hotplug 
+  ansible.builtin.copy:
+    dest: /etc/udev/rules.d/10-hotplug-mem.rules
+    content: 'SUBSYSTEM=="memory", ACTION=="add", ATTR{state}="online"'
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Create udev rule for CPU hotplug 
+  ansible.builtin.copy:
+    dest: /etc/udev/rules.d/10-hotplug-cpu.rules
+    content: 'SUBSYSTEM=="cpu", ACTION=="add", TEST=="online", ATTR{online}=="0", ATTR{online}="1"'
+    owner: root
+    group: root
+    mode: '0644'

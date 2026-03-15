@@ -1,0 +1,33 @@
+---
+- name: Provision Packer VM
+  hosts: all
+  become: yes
+  
+  vars:
+      vm_system_type: "{{ lookup('env', 'VM_SYSTEM_TYPE') }}"
+      ca_cert: "{{ lookup('env', 'CA_CERT') }}"
+      rke2_provider_type: "{{ lookup('env', 'RKE2_PROVIDER_TYPE') }}"
+      cloud_init_ds: "{{ lookup('env', 'CLOUD_INIT_DS') }}"
+
+  tasks:
+    - name: Add CA certificate
+      include_tasks: "playbook/certificate-ca.yml"
+
+    - name: Disable IPV6
+      include_tasks: "playbook/ipv6-disable.yml"
+
+    - name: Config Hot CPU and Memory
+      include_tasks: "playbook/hot-cpu-memory.yml"
+
+    - name: Config Cloud Init
+      include_tasks: "playbook/cloud-init.yml"
+
+    - name: Requirements Longhorn
+      include_tasks: "playbook/spec-longhorn.yml"
+      when: vm_system_type == 'storage'
+
+    - name: Requirements RKE2 Custom or Vsphere 
+      include_tasks: "playbook/spec-rke2-{{ rke2_provider_type }}.yml"
+
+    - name: Clean TPL
+      include_tasks: "playbook/clean-tpl.yml"

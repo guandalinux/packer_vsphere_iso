@@ -1,0 +1,21 @@
+- name: Load ipset kernel modules
+  community.general.modprobe:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - ip_set
+    - ip_set_hash_ip
+    - ip_set_hash_net
+    - xt_set
+
+- name: Persist ipset modules at boot
+  copy:
+    dest: /etc/modules-load.d/cilium.conf
+    content: |
+      ip_set
+      ip_set_hash_ip
+      ip_set_hash_net
+      xt_set
+    owner: root
+    group: root
+    mode: '0644'

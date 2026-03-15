@@ -1,0 +1,36 @@
+---
+# Requirements Longhorn
+
+- name: Ensure python3-apt is installed
+  apt:
+    name: python3-apt
+    state: present
+    update_cache: yes
+  tags: install
+
+- name: Install required packages
+  apt:
+    name:
+      - jq
+      - open-iscsi
+      - nfs-common
+      - cryptsetup
+      - dmsetup
+    state: present
+    update_cache: yes
+
+- name: Start and enable iscsid service
+  systemd:
+    name: iscsid
+    state: started
+    enabled: yes
+
+- name: Load iscsi_tcp kernel module
+  modprobe:
+    name: iscsi_tcp
+    state: present
+
+- name: Load dm_crypt kernel module
+  modprobe:
+    name: dm_crypt
+    state: present

@@ -1,0 +1,108 @@
+- name: Set ultra-light cloud-init config (SSH keys only)
+  copy:
+    dest: /etc/cloud/cloud.cfg
+    owner: root
+    group: root
+    mode: '0644'
+    content: |
+      users:
+        - default
+      disable_root: true
+      preserve_hostname: false
+      apt:
+        preserve_sources_list: true
+
+      # The modules that run in the 'init' stage
+      cloud_init_modules:
+      - migrator
+      - seed_random
+      - bootcmd
+      - write-files
+      - growpart
+      - resizefs
+      - disk_setup
+      - mounts
+      - set_hostname
+      - update_hostname
+      - ca-certs
+      - rsyslog
+      - users-groups
+      - ssh
+
+      # The modules that run in the 'config' stage
+      cloud_config_modules:
+      - snap
+      - ssh-import-id
+      - keyboard
+      - locale
+      - set-passwords
+      - grub-dpkg
+      - apt-pipelining
+      - apt-configure
+      - ntp
+      - timezone
+      - disable-ec2-metadata
+      - runcmd
+      - byobu
+
+      # The modules that run in the 'final' stage
+      cloud_final_modules:
+      - package-update-upgrade-install
+      - fan
+      - landscape
+      - lxd
+      - write-files-deferred
+      - puppet
+      - chef
+      - mcollective
+      - salt-minion
+      - reset_rmc
+      - refresh_rmc_and_interface
+      - rightscale_userdata
+      - scripts-vendor
+      - scripts-per-once
+      - scripts-per-boot
+      - scripts-per-instance
+      - scripts-user
+      - ssh-authkey-fingerprints
+      - keys-to-console
+      - install-hotplug
+      - phone-home
+      - final-message
+      - power-state-change
+
+      # System and/or distro specific settings
+      # (not accessible to handlers/transforms)
+      system_info:
+        # This will affect which distro class gets used
+        distro: debian
+        # Default user name + that default users groups (if added/used)
+        default_user:
+          name: debian
+          lock_passwd: True
+          gecos: Debian
+          groups: [adm, audio, cdrom, dialout, dip, floppy, netdev, plugdev, sudo, video]
+          sudo: ["ALL=(ALL) NOPASSWD:ALL"]
+          shell: /bin/bash
+        # Other config here will be given to the distro class and/or path classes
+        paths:
+            cloud_dir: /var/lib/cloud/
+            templates_dir: /etc/cloud/templates/
+        package_mirrors:
+          - arches: [default]
+            failsafe:
+              primary: https://deb.debian.org/debian
+              security: https://deb.debian.org/debian-security
+        ssh_svcname: ssh
+
+- name: Configure cloud-init datasource
+  ansible.builtin.copy:
+    dest: /etc/cloud/cloud.cfg.d/99-datasource.cfg
+    content: |
+      datasource_list: [OVF, VMware, None]
+
+- name: Force cloud-init to always run
+  ansible.builtin.copy:
+    dest: /etc/cloud/ds-identify.cfg
+    content: |
+      policy: enabled
